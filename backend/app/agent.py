@@ -149,6 +149,7 @@ You have access to typed tools to query live data. Follow these strict guideline
 4. **Data Resilience & Caveats**: If a metric is derived from incomplete data (e.g. 74% missing closure probability, unpopulated collection dates), you MUST explicitly state the caveat to the founder (e.g., "Heads up: weighted pipeline is directional because 74% of deals lack closure probability").
 5. **Ops Analyst Voice & Professional Formatting**: Speak like a crisp, high-conviction Chief of Staff / Head of Ops. Use clean markdown tables, bold KPI figures, and highlight actionable risks (e.g. unbilled amounts, stalled deals, won deals with no work order).
 6. **Cross-Board Reasoning**: When asked about full lifecycle or handover health, query both boards and use `join_deals_and_work_orders` to highlight pipeline-to-execution gaps.
+7. **Sector Ranking & Comparative Performance**: When asked about the 'best performing sector', 'highest revenue', 'most profit', 'top sector', or comparative rankings: query BOTH Deals and Work Orders, highlight the #1 top revenue-generating sector (Billed Revenue) and #1 sales sector (Closed-Won) directly with specific figures, followed by a complete ranked Markdown table.
 """
 
 async def execute_tool_call(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
@@ -190,6 +191,7 @@ class BIAgent:
                      "I connect directly to your live **monday.com** boards (*Deals Funnel* & *Work Orders Tracker*) to answer founder-level strategic and operational questions.\n\n" \
                      "**Try asking me:**\n" \
                      "- *\"How is our sales pipeline looking for the energy sector this quarter?\"*\n" \
+                     "- *\"Which sector is the best performing among all sectors?\"*\n" \
                      "- *\"What is our total unbilled amount and collection risk across ongoing work orders?\"*\n" \
                      "- *\"Which deals are won in pipeline but have no work order created?\"*\n" \
                      "- *\"Draft a comprehensive Q3 leadership update with top 3 strategic risks\"*\n" \
@@ -301,7 +303,16 @@ class BIAgent:
             caveats.extend(res["data_quality_notes"])
 
         # 5. Sector Ranking / Profitability / Top Revenue comparison intent
-        elif any(k in q_lower for k in ["profit", "most profit", "highest revenue", "top revenue", "top sector", "best sector", "leading sector", "rank sector", "sector ranking", "compare sector", "which sector"]):
+        elif (
+            any(k in q_lower for k in [
+                "profit", "most profit", "highest revenue", "top revenue", "top sector", "best sector", 
+                "best performing", "top performing", "highest performing", "leading sector", "rank sector", 
+                "sector ranking", "compare sector", "which sector", "performing sector", "performance among"
+            ]) or (
+                any(w in q_lower for w in ["best", "top", "highest", "most", "leading", "rank", "performing", "highest"]) 
+                and any(s in q_lower for s in ["sector", "sectors", "industry", "vertical", "among", "all", "al"])
+            )
+        ):
             traces.append("⚡ Planning: Sector Ranking & Financial Performance Query → Aggregating Deals and Work Orders across all sectors")
             deals_res = await get_deals()
             wo_res = await get_work_orders()
@@ -500,8 +511,14 @@ class BIAgent:
                     return
 
                 else:
-                    yield {"type": "answer", "content": choice.message.content or ""}
-                    return
+                    # If model did not call tools but user query is a data question, fall back to grounded query planner
+                    is_data_query = any(k in user_query.lower() for k in [
+                        "deal", "order", "work", "pipeline", "sector", "revenue", "profit", 
+                        "billed", "unbilled", "ar", "risk", "lead", "best", "top", "rank", "won"
+                    ])
+                    if not is_data_query and choice.message.content:
+                        yield {"type": "answer", "content": choice.message.content}
+                        return
 
             except Exception as e:
                 logger.warning(f"Groq API call failed: {e}. Falling back to resilient local planner.")
