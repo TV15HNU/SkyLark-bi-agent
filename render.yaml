@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: skylark-bi-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEALS_BOARD_ID
+        value: "5030965714"
+      - key: WORK_ORDERS_BOARD_ID
+        value: "5030965727"
+      - key: GROQ_MODEL
+        value: "openai/gpt-oss-120b"
+      - key: MONDAY_API_TOKEN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
