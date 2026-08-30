@@ -1,0 +1,46 @@
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+frontend/out/
+build/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python / Backend
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+backend/venv/
+backend/.venv/
+.pytest_cache/
+backend/.pytest_cache/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+
+# OS / IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Raw Data files (Optional: keep repo lightweight, live API is primary)
+*.xlsx
